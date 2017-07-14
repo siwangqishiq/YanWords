@@ -7,6 +7,38 @@
 
 char *trim(char *str);
 
+int dropWordsTable(sqlite3 *db){
+	if(!db)
+		return -1;
+	
+	char sql[]="drop table words;";
+	
+	int rc = sqlite3_exec(db, sql, NULL, NULL, NULL);
+	if(rc != SQLITE_OK){
+		printf("delete table SQL error\n");
+	}else{
+		printf("delete table WORDS COMPLETE!\n");
+	}
+	
+	return rc;
+}
+
+int createWordsTable(sqlite3 *db){
+	if(!db)
+		return -1;
+	
+	char sql[]="create table words(id integer primary key autoincrement ,word text not null,translate text not null,time long,extra text);";	
+	
+	int rc = sqlite3_exec(db, sql, NULL, NULL, NULL);
+	if(rc != SQLITE_OK){
+		printf("create table words SQL error\n");
+	}else{
+		printf("create table WORDS COMPLETE\n");
+	}
+	
+	return rc;
+}
+
 int clearDatabase(sqlite3 *db){
 	if(!db)
 		return -1;
@@ -36,7 +68,8 @@ int addWordData(sqlite3 *db,char *word,char *translate){
 	
 	
 	char *zErrMsg = 0;
-	//printf("run sql : %s\n",sql);
+	printf("run sql : %s\n",sql);
+
 	int rc = sqlite3_exec(db, sql,NULL ,0 ,&zErrMsg);
 	if( rc != SQLITE_OK ){
 		printf("INSERT SQL error %s\n",zErrMsg);
@@ -45,6 +78,29 @@ int addWordData(sqlite3 *db,char *word,char *translate){
 	}
 	
 	return rc;
+}
+
+static int callback(void *data, int argc, char **argv, char **azColName){
+   int i;
+   fprintf(stderr, "%s: ", (const char*)data);
+   for(i=0; i<argc; i++){
+      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+   }
+   printf("\n");
+   return 0;
+}
+
+void readdb(sqlite3 *db){
+	char sql[] = "select * from words;";
+	char *zErrMsg = 0;
+	const char* data = "Callback function called";
+	
+	int rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);
+	if(rc != SQLITE_OK ){
+      printf("SQL error: %s\n", zErrMsg);
+   }else{
+      printf("Operation done successfully\n");
+   }
 }
 
 int main(int argc,char *agrv[]){
@@ -70,7 +126,8 @@ int main(int argc,char *agrv[]){
 	
 	printf("Opened database successfully\n");
 	
-	clearDatabase(db);
+	dropWordsTable(db);
+	createWordsTable(db);
 	
 	while(!feof(fp)){
 		char word[BUFFER_SIZE];
@@ -87,7 +144,12 @@ int main(int argc,char *agrv[]){
 	
 	fclose(fp);
 	
+	readdb(db);
+	
 	sqlite3_close(db);
+	
+	printf("import complete! press any key\n");
+	getchar();
 	
 	return 0;
 }
