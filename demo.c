@@ -129,6 +129,7 @@ int main(int argc,char *agrv[]){
 	dropWordsTable(db);
 	createWordsTable(db);
 	
+	sqlite3_exec(db, "begin transaction", 0, 0, NULL ); //开始一个事务
 	while(!feof(fp)){
 		char word[BUFFER_SIZE];
 		char translate[BUFFER_SIZE];
@@ -141,8 +142,11 @@ int main(int argc,char *agrv[]){
 		
 		addWordData(db,word,translate);
 	}//end while
+	sqlite3_exec( db, "commit transaction", 0, 0, NULL ); //提交事务
+	
 	
 	fclose(fp);
+	
 	
 	readdb(db);
 	
